@@ -16,6 +16,8 @@ interface RestaurantCardProps {
   place_id: string;
   isFiltered?: boolean;
   onDetailsClick?: (place_id: string) => void;
+  main_photo?: string;  // Add this
+  photos?: string[]; 
 }
 
 const RestaurantCard = ({
@@ -32,6 +34,8 @@ const RestaurantCard = ({
   place_id,
   isFiltered = false,
   onDetailsClick,
+  main_photo,  // Add this
+  photos = [], // Add this with default empty array
 }: RestaurantCardProps) => {
   // Determine traffic color based on status
   const getTrafficColor = (status?: string) => {
@@ -49,6 +53,7 @@ const RestaurantCard = ({
     }
   };
 
+  const placeholderImage = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzdGF1cmFudHxlbnwwfHwwfHw%3D&w=1000&q=80';
   // Format distance for display
   const formatDistance = (meters: number) => {
     if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
@@ -79,13 +84,17 @@ const RestaurantCard = ({
     <div className={`rounded-lg border bg-card text-card-foreground shadow hover:shadow-lg transition-shadow ${isFiltered ? 'ring-2 ring-primary border-primary' : ''}`}>
       <div className="relative h-48">
         <img
-          src={getRestaurantImage()}
+          src={main_photo || placeholderImage}
           alt={name}
           className="w-full h-full object-cover rounded-t-lg"
           loading="lazy"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzdGF1cmFudHxlbnwwfHwwfHw%3D&w=1000&q=80';
-          }}
+            if (photos.length > 0) {
+              (e.target as HTMLImageElement).src = photos[0];
+            } else {
+              // Fall back to placeholder if no photos available
+              (e.target as HTMLImageElement).src = placeholderImage;
+            }          }}
         />
         <div className="absolute top-2 right-2 bg-background/90 px-2 py-1 rounded-full text-sm flex items-center gap-1">
           <Star className="h-4 w-4 text-yellow-400" />

@@ -426,6 +426,24 @@ def find_restaurants(request):
                 return total_traffic_seconds, "MEDIUM", "orange"
             else:
                 return total_traffic_seconds, "HIGH", "red"
+            
+        def fetch_restaurant_photos(place_id, max_photos=1):
+             try:
+                cache_key = f"restaurant_photos_{place_id}"
+                cached_photos = cache.get(cache_key)
+                if cached_photos:
+                  return cached_photos
+                place_details = gmaps.place(
+                place_id=place_id,
+                 fields=['photo']
+                )
+                photos = place_details.get('result', {}).get('photos', [])
+                cache.set(cache_key, photos[:max_photos], 60 * 60 * 24)
+                return photos[:max_photos]
+             except Exception as e:
+                logger.error(f"Error fetching photos for place {place_id}: {str(e)}")
+                return []                   
+        
 
         def fetch_all_nearby_restaurants(location, radius=200):
             restaurants = []
@@ -482,6 +500,16 @@ def find_restaurants(request):
             for place in nearby_restaurants[:5]:
                 if len(restaurant_list) >= 100:  # Early exit
                     break
+                photos = fetch_restaurant_photos(place['place_id'], max_photos=2)
+                photo_urls = []
+                
+                for photo in photos:
+                  try:
+                    photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo['photo_reference']}&key=AIzaSyBRBeH0AcfEEg-hzaaORkDAcuaFfObTzMA"
+                    photo_urls.append(photo_url)
+                  except Exception as e:
+                    logger.error(f"Error generating photo URL: {str(e)}")
+    
                 road_name = segment['road_name'] if segment['road_name'] else "Main Road"
                 distance_to_road = calculate_distance_to_road(place['geometry']['location'], best_coordinates)
                 nearest_point = find_nearest_road_point(place['geometry']['location'], best_coordinates)
@@ -500,7 +528,9 @@ def find_restaurants(request):
                     'total_traffic_minutes': total_traffic_minutes,
                     'internal_traffic_status': internal_traffic_status,
                     'internal_traffic_value': internal_traffic_value,
-                    'road': road_name
+                    'road': road_name,
+                    'photos': photo_urls,  # Add the photo URLs to the restaurant data
+                    'main_photo': photo_urls[0] if photo_urls else None
                 })
             time.sleep(0.2)
 

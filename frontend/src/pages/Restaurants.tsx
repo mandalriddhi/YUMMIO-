@@ -178,6 +178,8 @@ const Restaurants = () => {
                 road={r.road}
                 place_id={r.place_id}
                 onDetailsClick={() => console.log(r.place_id)}
+                main_photo={r.main_photo}  // Add this
+                photos={r.photos}  
               />
             ))}
             {visibleRestaurants.length === 0 && <p>No restaurants found</p>}
